@@ -16,7 +16,7 @@ When you hold the push-to-talk key, a centered overlay appears showing the recor
 
 | Recording | Transcribing |
 |-----------|-------------|
-| Pulsing red microphone + "Recording..." | Bouncing blue dots + "Transcribing..." |
+| ![Recording](screenshots/recording.png) | ![Transcribing](screenshots/transcribing.png) |
 
 ## Requirements
 
