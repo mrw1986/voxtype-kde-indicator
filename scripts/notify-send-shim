@@ -1,27 +1,41 @@
 #!/bin/bash
 # Wrapper that silently drops notify-send calls from Voxtype.
 # All other callers pass through to the real notify-send.
-# Parses options positionally to avoid matching message body text.
-prev=""
-opts_done=false
-for arg in "$@"; do
-    if $opts_done; then
-        prev=""
-        continue
-    fi
+# Implements proper option parsing to avoid matching message body text.
+
+# Parse using index-based iteration so we can look ahead for option values.
+# notify-send options that consume the next argument:
+#   -u/--urgency, -t/--expire-time, -a/--app-name, -i/--icon,
+#   -c/--category, -h/--hint
+args=("$@")
+i=0
+while [ $i -lt ${#args[@]} ]; do
+    arg="${args[$i]}"
     if [[ "$arg" == "--" ]]; then
-        opts_done=true
-        continue
+        break  # End of options
     fi
-    # --app-name=VALUE or -aVALUE (combined short option)
-    if [[ "$arg" == "--app-name=Voxtype" || "$arg" == "-aVoxtype" ]]; then
-        exit 0
-    fi
-    # --app-name VALUE or -a VALUE (two-arg form)
-    if [[ "$prev" == "--app-name" || "$prev" == "-a" ]] && [[ "$arg" == "Voxtype" ]]; then
-        exit 0
-    fi
-    prev="$arg"
+    case "$arg" in
+        --app-name=Voxtype|-aVoxtype)
+            exit 0 ;;
+        --app-name|-a)
+            # Next arg is the value
+            next="${args[$((i+1))]:-}"
+            if [[ "$next" == "Voxtype" ]]; then
+                exit 0
+            fi
+            i=$((i+2)); continue ;;
+        --urgency=*|--expire-time=*|--icon=*|--category=*|--hint=*)
+            ;;  # =VALUE options, consumed inline
+        --urgency|--expire-time|--icon|--category|--hint|-u|-t|-i|-c|-h)
+            i=$((i+2)); continue ;;  # Skip the value arg
+        --transient|--wait|-e|-w|--version|--help)
+            ;;  # No-value flags
+        -*)
+            ;;  # Unknown option, skip
+        *)
+            break ;;  # First positional arg — stop option parsing
+    esac
+    i=$((i+1))
 done
 # Find the real notify-send by excluding the shim directory from PATH.
 # Prefer /usr/bin if it exists, then fall back to PATH search.
