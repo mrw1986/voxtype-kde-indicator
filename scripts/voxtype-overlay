@@ -295,6 +295,7 @@ class VoxtypeOverlay(Gtk.Application):
                 if self._monitor:
                     self._monitor.cancel()
                     self._monitor = None
+                self._stop_backstop()
                 self._start_poll()
         elif event in (
             Gio.FileMonitorEvent.MOVED_IN,

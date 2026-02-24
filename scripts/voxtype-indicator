@@ -72,6 +72,10 @@ class VoxtypeIndicator:
         self.app = QApplication(sys.argv)
         self.app.setApplicationName("voxtype-indicator")
         self.app.setQuitOnLastWindowClosed(False)
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            print("voxtype-indicator: no system tray available, exiting",
+                  file=sys.stderr)
+            sys.exit(1)
 
         self._state = "idle"
         self._watcher_ready = False
@@ -83,9 +87,9 @@ class VoxtypeIndicator:
         # System tray
         self.tray = QSystemTrayIcon(make_tray_icon("idle"), self.app)
         self.tray.setToolTip("Voxtype")
-        menu = QMenu()
-        menu.addAction("Quit", self.app.quit)
-        self.tray.setContextMenu(menu)
+        self._menu = QMenu()
+        self._menu.addAction("Quit", self.app.quit)
+        self.tray.setContextMenu(self._menu)
         self.tray.show()
 
         # Fallback poll — starts at 500ms, reduced to 2s once watchers are up

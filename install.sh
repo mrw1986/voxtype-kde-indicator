@@ -3,6 +3,7 @@
 # Installs the overlay, indicator, and supporting config for voxtype on KDE Plasma 6 Wayland.
 set -euo pipefail
 
+REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$HOME/.local/bin"
 SYSTEMD_DIR="$HOME/.config/systemd/user"
 SHIMS_DIR="$HOME/.local/lib/voxtype-shims"
@@ -41,13 +42,13 @@ fi
 # Install scripts
 echo "Installing scripts to $SCRIPTS_DIR..."
 mkdir -p "$SCRIPTS_DIR"
-install -m 755 scripts/voxtype-overlay "$SCRIPTS_DIR/voxtype-overlay"
-install -m 755 scripts/voxtype-indicator "$SCRIPTS_DIR/voxtype-indicator"
+install -m 755 "$REPO_DIR/scripts/voxtype-overlay" "$SCRIPTS_DIR/voxtype-overlay"
+install -m 755 "$REPO_DIR/scripts/voxtype-indicator" "$SCRIPTS_DIR/voxtype-indicator"
 
 # Install notify-send shim
 echo "Installing notify-send shim to $SHIMS_DIR..."
 mkdir -p "$SHIMS_DIR"
-install -m 755 scripts/notify-send-shim "$SHIMS_DIR/notify-send"
+install -m 755 "$REPO_DIR/scripts/notify-send-shim" "$SHIMS_DIR/notify-send"
 
 # Install systemd services
 echo "Installing systemd services..."
@@ -77,11 +78,11 @@ fi
 
 # Template the overlay service with the resolved library path
 sed "s|Environment=LD_PRELOAD=.*|Environment=LD_PRELOAD=$LAYER_SHELL_LIB|" \
-    systemd/voxtype-overlay.service > "$SYSTEMD_DIR/voxtype-overlay.service"
+    "$REPO_DIR/systemd/voxtype-overlay.service" > "$SYSTEMD_DIR/voxtype-overlay.service"
 chmod 644 "$SYSTEMD_DIR/voxtype-overlay.service"
 
-install -m 644 systemd/voxtype-indicator.service "$SYSTEMD_DIR/"
-install -m 644 systemd/voxtype-no-notify.conf "$SYSTEMD_DIR/voxtype.service.d/no-notify.conf"
+install -m 644 "$REPO_DIR/systemd/voxtype-indicator.service" "$SYSTEMD_DIR/"
+install -m 644 "$REPO_DIR/systemd/voxtype-no-notify.conf" "$SYSTEMD_DIR/voxtype.service.d/no-notify.conf"
 
 # Suppress "Remote desktop session started" notification
 # Merges only the needed section instead of replacing the entire file
@@ -97,7 +98,7 @@ if command -v kwriteconfig6 >/dev/null 2>&1; then
 else
     # Fallback: replace section in-place or append if missing
     if grep -q "\[Event/remotedesktopstarted\]" "$NOTIFYRC" 2>/dev/null; then
-        # Clear existing keys in the section
+        # Clear existing keys and ensure all required keys exist
         sed -i '/^\[Event\/remotedesktopstarted\]/,/^\[/{
             s/^Action=.*/Action=/
             s/^Execute=.*/Execute=/
@@ -105,10 +106,16 @@ else
             s/^Sound=.*/Sound=/
             s/^TTS=.*/TTS=/
         }' "$NOTIFYRC"
+        # Append any missing keys within the section
+        for key in Action Execute Logfile Sound TTS; do
+            if ! sed -n '/^\[Event\/remotedesktopstarted\]/,/^\[/p' "$NOTIFYRC" | grep -q "^${key}="; then
+                sed -i "/^\[Event\/remotedesktopstarted\]/a ${key}=" "$NOTIFYRC"
+            fi
+        done
     else
         # Ensure trailing newline before appending
         [ -s "$NOTIFYRC" ] && [ -n "$(tail -c1 "$NOTIFYRC")" ] && printf '\n' >> "$NOTIFYRC"
-        cat config/xdg-desktop-portal-kde.notifyrc >> "$NOTIFYRC"
+        cat "$REPO_DIR/config/xdg-desktop-portal-kde.notifyrc" >> "$NOTIFYRC"
     fi
 fi
 
