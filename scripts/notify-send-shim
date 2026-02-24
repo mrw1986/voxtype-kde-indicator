@@ -37,17 +37,20 @@ while [ $i -lt ${#args[@]} ]; do
     esac
     i=$((i+1))
 done
-# Find the real notify-send by excluding the shim directory from PATH.
-# Prefer /usr/bin if it exists, then fall back to PATH search.
-shim_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Find the real notify-send by excluding the shim itself from results.
+# Use realpath to prevent recursion from symlinks or path normalization.
+shim_self="$(realpath -m "${BASH_SOURCE[0]}" 2>/dev/null || readlink -f "${BASH_SOURCE[0]}")"
 real_notify=""
 if [ -x /usr/bin/notify-send ]; then
-    real_notify=/usr/bin/notify-send
-else
+    candidate_real="$(realpath -m /usr/bin/notify-send 2>/dev/null || readlink -f /usr/bin/notify-send)"
+    [ "$candidate_real" != "$shim_self" ] && real_notify=/usr/bin/notify-send
+fi
+if [ -z "$real_notify" ]; then
     IFS=: read -ra dirs <<< "$PATH"
     for d in "${dirs[@]}"; do
-        [ "$d" = "$shim_dir" ] && continue
-        if [ -x "$d/notify-send" ]; then
+        [ -x "$d/notify-send" ] || continue
+        candidate_real="$(realpath -m "$d/notify-send" 2>/dev/null || readlink -f "$d/notify-send")"
+        if [ "$candidate_real" != "$shim_self" ]; then
             real_notify="$d/notify-send"
             break
         fi
