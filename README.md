@@ -93,19 +93,19 @@ systemctl --user enable --now voxtype-indicator.service
 ## How It Works
 
 ```
-┌─────────────────────┐     ┌──────────────────────┐
-│   voxtype daemon    │────▶│ state file (inotify)  │
-│   (Whisper + PTT)   │     │ /run/user/UID/        │
-└─────────────────────┘     │ voxtype/state         │
-                            └──────┬───────┬────────┘
-                                   │       │
-                    ┌──────────────┘       └──────────────┐
-                    ▼                                      ▼
+┌─────────────────────┐     ┌────────────────────────┐
+│   voxtype daemon    │────▶│  state file (inotify)  │
+│   (Whisper + PTT)   │     │  /run/user/UID/        │
+└─────────────────────┘     │  voxtype/state         │
+                            └───────┬───────┬────────┘
+                                    │       │
+                    ┌───────────────┘       └───────────────┐
+                    ▼                                        ▼
         ┌───────────────────┐              ┌──────────────────────┐
         │ voxtype-indicator │              │   voxtype-overlay    │
         │ (PyQt6 tray icon) │              │ (GTK4 + layer-shell) │
-        │ gray/red/blue dot │              │ centered OSD popup   │
-        └───────────────────┘              │ pulsing animation    │
+        │ gray/red/blue dot │              │  centered OSD popup  │
+        └───────────────────┘              │  pulsing animation   │
                                            └──────────────────────┘
 ```
 
