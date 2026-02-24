@@ -24,14 +24,17 @@ while [ $i -lt ${#args[@]} ]; do
                 exit 0
             fi
             i=$((i+2)); continue ;;
-        --urgency=*|--expire-time=*|--icon=*|--category=*|--hint=*)
+        --urgency=*|--expire-time=*|--icon=*|--category=*|--hint=*|--replace-id=*|--action=*)
             ;;  # =VALUE options, consumed inline
-        --urgency|--expire-time|--icon|--category|--hint|-u|-t|-i|-c|-h)
+        --urgency|--expire-time|--icon|--category|--hint|--replace-id|--action|-u|-t|-i|-c|-h|-r|-A)
             i=$((i+2)); continue ;;  # Skip the value arg
-        --transient|--wait|-e|-w|--version|--help)
+        --transient|--wait|--print-id|-e|-w|-p|--version|--help)
             ;;  # No-value flags
         -*)
-            ;;  # Unknown option, skip
+            # Unknown option — assume it takes no value (safest default:
+            # if it actually takes a value, the value will be treated as
+            # a positional arg and stop parsing, which is conservative)
+            ;;
         *)
             break ;;  # First positional arg — stop option parsing
     esac

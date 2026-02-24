@@ -130,28 +130,21 @@ if command -v kwriteconfig6 >/dev/null 2>&1; then
     kwriteconfig6 --file "$NOTIFYRC" --group "Event/remotedesktopstarted" --key "Sound" ""
     kwriteconfig6 --file "$NOTIFYRC" --group "Event/remotedesktopstarted" --key "TTS" ""
 else
-    # Fallback: replace section in-place or append if missing
-    if grep -q "\[Event/remotedesktopstarted\]" "$NOTIFYRC" 2>/dev/null; then
-        # Clear existing keys and ensure all required keys exist
-        sed -i '/^\[Event\/remotedesktopstarted\]/,/^\[/{
-            s/^Action=.*/Action=/
-            s/^Execute=.*/Execute=/
-            s/^Logfile=.*/Logfile=/
-            s/^Sound=.*/Sound=/
-            s/^TTS=.*/TTS=/
-        }' "$NOTIFYRC"
-        # Append any missing keys within the section
-        section_content=$(sed -n '/^\[Event\/remotedesktopstarted\]/,/^\[/p' "$NOTIFYRC" 2>/dev/null || true)
-        for key in Action Execute Logfile Sound TTS; do
-            if ! printf '%s\n' "$section_content" | grep -q "^${key}="; then
-                sed -i "/^\[Event\/remotedesktopstarted\]/a ${key}=" "$NOTIFYRC"
-            fi
-        done
-    else
-        # Ensure trailing newline before appending
-        [ -s "$NOTIFYRC" ] && [ -n "$(tail -c1 "$NOTIFYRC")" ] && printf '\n' >> "$NOTIFYRC"
-        cat "$REPO_DIR/config/xdg-desktop-portal-kde.notifyrc" >> "$NOTIFYRC"
+    # Fallback: deterministic rewrite — strip the target section if it exists,
+    # then append the correct version. This avoids fragile in-place editing.
+    SECTION="Event/remotedesktopstarted"
+    if [ -f "$NOTIFYRC" ]; then
+        # Remove the existing section (header through next header or EOF)
+        awk -v sect="[$SECTION]" '
+            BEGIN { skip=0 }
+            /^\[/ { skip = ($0 == sect) ? 1 : 0 }
+            !skip { print }
+        ' "$NOTIFYRC" > "${NOTIFYRC}.tmp"
+        mv "${NOTIFYRC}.tmp" "$NOTIFYRC"
     fi
+    # Ensure trailing newline, then append the correct section
+    [ -s "$NOTIFYRC" ] && [ -n "$(tail -c1 "$NOTIFYRC")" ] && printf '\n' >> "$NOTIFYRC"
+    cat "$REPO_DIR/config/xdg-desktop-portal-kde.notifyrc" >> "$NOTIFYRC"
 fi
 
 # Reload and enable
