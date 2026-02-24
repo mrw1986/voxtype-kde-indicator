@@ -1,0 +1,12 @@
+[Unit]
+Description=Voxtype OSD overlay (layer-shell)
+After=voxtype.service graphical-session.target
+Requires=graphical-session.target
+
+[Service]
+ExecStart=@@LIBEXECDIR@@/voxtype-kde-indicator/voxtype-overlay-wrapper
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

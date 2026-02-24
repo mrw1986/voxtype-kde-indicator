@@ -1,0 +1,11 @@
+#!/bin/sh
+# Wrapper that resolves the gtk4-layer-shell library path at runtime and
+# sets LD_PRELOAD before launching the overlay.  This allows the RPM to
+# be noarch while referencing the correct arch-specific library path.
+LIB=$(ldconfig -p 2>/dev/null | sed -n 's/.*libgtk4-layer-shell\.so\.0 .* => //p' | head -1)
+if [ -z "$LIB" ]; then
+    echo "voxtype-overlay-wrapper: libgtk4-layer-shell.so.0 not found" >&2
+    exit 1
+fi
+export LD_PRELOAD="$LIB"
+exec "$(dirname "$0")/voxtype-overlay" "$@"
