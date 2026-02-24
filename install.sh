@@ -77,8 +77,11 @@ if [ -z "$LAYER_SHELL_LIB" ]; then
 fi
 
 # Template the overlay service with the resolved library path
-sed "s|Environment=LD_PRELOAD=.*|Environment=LD_PRELOAD=$LAYER_SHELL_LIB|" \
-    "$REPO_DIR/systemd/voxtype-overlay.service" > "$SYSTEMD_DIR/voxtype-overlay.service"
+# Use awk to avoid sed metacharacter issues with the path
+awk -v lib="$LAYER_SHELL_LIB" '{
+    if ($0 ~ /^Environment=LD_PRELOAD=/) print "Environment=LD_PRELOAD=" lib
+    else print
+}' "$REPO_DIR/systemd/voxtype-overlay.service" > "$SYSTEMD_DIR/voxtype-overlay.service"
 chmod 644 "$SYSTEMD_DIR/voxtype-overlay.service"
 
 install -m 644 "$REPO_DIR/systemd/voxtype-indicator.service" "$SYSTEMD_DIR/"

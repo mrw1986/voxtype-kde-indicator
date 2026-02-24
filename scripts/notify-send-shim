@@ -12,4 +12,17 @@ for arg in "$@"; do
     fi
     prev="$arg"
 done
-exec /usr/bin/notify-send "$@"
+# Find the real notify-send by excluding the shim directory from PATH
+shim_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+real_notify=""
+IFS=: read -ra dirs <<< "$PATH"
+for d in "${dirs[@]}"; do
+    [ "$d" = "$shim_dir" ] && continue
+    if [ -x "$d/notify-send" ]; then
+        real_notify="$d/notify-send"
+        break
+    fi
+done
+if [ -n "$real_notify" ]; then
+    exec "$real_notify" "$@"
+fi
