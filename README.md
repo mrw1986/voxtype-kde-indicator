@@ -53,6 +53,11 @@ install -m 755 scripts/voxtype-overlay ~/.local/bin/
 # Install the systemd service
 install -m 644 systemd/voxtype-overlay.service ~/.config/systemd/user/
 
+# Verify the LD_PRELOAD path matches your system (Fedora default shown).
+# Debian/Ubuntu may use: /usr/lib/x86_64-linux-gnu/libgtk4-layer-shell.so.0
+# Find yours with: ldconfig -p | grep libgtk4-layer-shell
+grep LD_PRELOAD ~/.config/systemd/user/voxtype-overlay.service
+
 # Enable and start
 systemctl --user daemon-reload
 systemctl --user enable --now voxtype-overlay.service

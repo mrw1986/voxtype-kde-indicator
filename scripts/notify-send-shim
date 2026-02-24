@@ -1,7 +1,7 @@
 #!/bin/bash
 # Wrapper that silently drops notify-send calls from Voxtype.
 # All other callers pass through to the real notify-send.
-# Only matches --app-name=Voxtype (exact flag), not arbitrary args.
+# Matches: --app-name=Voxtype, --app-name Voxtype, -a Voxtype
 prev=""
 for arg in "$@"; do
     if [[ "$arg" == "--app-name=Voxtype" ]]; then
@@ -10,19 +10,29 @@ for arg in "$@"; do
     if [[ "$prev" == "--app-name" && "$arg" == "Voxtype" ]]; then
         exit 0
     fi
+    if [[ "$prev" == "-a" && "$arg" == "Voxtype" ]]; then
+        exit 0
+    fi
     prev="$arg"
 done
-# Find the real notify-send by excluding the shim directory from PATH
+# Find the real notify-send by excluding the shim directory from PATH.
+# Prefer /usr/bin if it exists, then fall back to PATH search.
 shim_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 real_notify=""
-IFS=: read -ra dirs <<< "$PATH"
-for d in "${dirs[@]}"; do
-    [ "$d" = "$shim_dir" ] && continue
-    if [ -x "$d/notify-send" ]; then
-        real_notify="$d/notify-send"
-        break
-    fi
-done
+if [ -x /usr/bin/notify-send ]; then
+    real_notify=/usr/bin/notify-send
+else
+    IFS=: read -ra dirs <<< "$PATH"
+    for d in "${dirs[@]}"; do
+        [ "$d" = "$shim_dir" ] && continue
+        if [ -x "$d/notify-send" ]; then
+            real_notify="$d/notify-send"
+            break
+        fi
+    done
+fi
 if [ -n "$real_notify" ]; then
     exec "$real_notify" "$@"
 fi
+echo "notify-send-shim: could not find real notify-send in PATH" >&2
+exit 127

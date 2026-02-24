@@ -15,7 +15,7 @@ echo ""
 echo "Checking dependencies..."
 missing=()
 command -v voxtype >/dev/null 2>&1 || missing+=("voxtype")
-python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Gtk4LayerShell', '1.0')" 2>/dev/null || missing+=("gtk4-layer-shell / python3-gobject")
+python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Gtk4LayerShell', '1.0'); from gi.repository import Gtk, Gtk4LayerShell" 2>/dev/null || missing+=("gtk4-layer-shell / python3-gobject")
 
 if [ ${#missing[@]} -gt 0 ]; then
     echo "Missing required dependencies: ${missing[*]}"
